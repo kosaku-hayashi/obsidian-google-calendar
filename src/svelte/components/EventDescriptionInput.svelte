@@ -5,7 +5,7 @@
 	import { obsidianLinkToAnchor } from "../../helper/Helper";
 
     export let event: GoogleEvent;
-    let isPreview = event.id  !== undefined;
+    let isPreview = false;
 
     const convertDescriptionToMarkdown = () => {
         const turndownService = new TurndownService();
