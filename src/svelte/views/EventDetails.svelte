@@ -77,7 +77,7 @@
         if(event.eventType === "multiDay") {
             event = await getEvent(event.id, event.parent.id);
         }
-        fullDay = event?.start?.dateTime == undefined && event?.start?.date !== undefined;
+        fullDay = event.id ? event?.start?.dateTime == undefined && event?.start?.date !== undefined : true;
 
 		if (!event?.transparency) {
             isBusy = true;
