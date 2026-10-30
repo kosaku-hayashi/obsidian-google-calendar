@@ -140,6 +140,16 @@ export default class GoogleCalendarPlugin extends Plugin {
 
 	events: EventRef[] = [];
 
+	openCreateEventModal(
+		initialEvent: GoogleEvent = { start: {}, end: {} },
+		onCreated: () => void = googleClearCachedEvents
+	): void {
+		if (!settingsAreCompleteAndLoggedIn()) {
+			return;
+		}
+
+		new EventDetailsModal(initialEvent, onCreated).open();
+	}
 
 	initView = async (viewId: string, event?: GoogleEvent, closeFunction?: () => void): Promise<WorkspaceLeaf> => {
 		if (
@@ -338,20 +348,10 @@ export default class GoogleCalendarPlugin extends Plugin {
 			name: "Create gCal Event inside Popup",
 
 			checkCallback: (checking: boolean) => {
-				const canRun = settingsAreCompleteAndLoggedIn();
-
 				if (checking) {
-					return canRun;
+					return settingsAreCompleteAndLoggedIn();
 				}
-
-				if (!canRun) {
-					return;
-				}
-
-				new EventDetailsModal({ start: {}, end: {} }, () => {
-					googleClearCachedEvents()
-				}).open()
-
+				this.openCreateEventModal();
 			},
 		});
 

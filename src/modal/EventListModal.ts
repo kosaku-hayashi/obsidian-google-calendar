@@ -8,6 +8,10 @@ import { createNoteFromEvent } from "../helper/AutoEventNoteCreator";
 import { createDailyNote } from 'obsidian-daily-notes-interface';
 import { getSingleDailyNote } from "../helper/DailyNoteHelper";
 import { VIEW_TYPE_GOOGLE_CALENDAR_EVENT_DETAILS } from "../view/EventDetailsView";
+
+const CREATE_TASK_ITEM_ID = "__create-task__";
+type ModalSelectMode = "details" | "createNote";
+
 /**
  * This class is used to display a select modal in which the user can select an event
 */
@@ -17,6 +21,7 @@ export class EventListModal extends FuzzySuggestModal<GoogleEvent> {
 	currentDate: moment.Moment;
 	closeFunction?: () => void;
 	modalSelectMode: ModalSelectMode;
+	showCreateTaskAction: boolean;
 	dailyNoteMap: Record<string, TFile>;
 	plugin = GoogleCalendarPlugin.getInstance()
 	constructor(
@@ -24,11 +29,13 @@ export class EventListModal extends FuzzySuggestModal<GoogleEvent> {
 		modalSelectMode: ModalSelectMode,
 		currentDate: moment.Moment = window.moment(),
 		eventsChanged = false,
-		closeFunction?: () => void
+		closeFunction?: () => void,
+		showCreateTaskAction = false
 	) {
 		super(window.app);
 		this.eventList = [...eventList];
 		this.modalSelectMode = modalSelectMode;
+		this.showCreateTaskAction = showCreateTaskAction;
 		this.setPlaceholder(`${currentDate.format("MM/DD/YYYY")} Arrow left/right to switch day`);
 		this.emptyStateText = "No events found enter to create a new one"
 		this.eventsChanged = eventsChanged;
@@ -88,13 +95,20 @@ export class EventListModal extends FuzzySuggestModal<GoogleEvent> {
 	}
 
 	getItems(): GoogleEvent[] {
-		if (this.plugin.settings.activateDailyNoteAddon) {
-			return [{ id: "xxx", start: null, end: null }, ...this.eventList];
+		const items = [...this.eventList];
+		if (this.showCreateTaskAction && this.modalSelectMode === "details") {
+			items.unshift({ id: CREATE_TASK_ITEM_ID, start: {}, end: {} });
 		}
-		return this.eventList;
+		if (this.plugin.settings.activateDailyNoteAddon) {
+			items.unshift({ id: "xxx", start: null, end: null });
+		}
+		return items;
 	}
 
 	getItemText(item: GoogleEvent): string {
+		if (item.id === CREATE_TASK_ITEM_ID) {
+			return "Create Task";
+		}
 		if (item.id == "xxx") {
 			if (getSingleDailyNote(this.currentDate)) {
 				return "Open daily note"
@@ -112,6 +126,20 @@ export class EventListModal extends FuzzySuggestModal<GoogleEvent> {
 	}
 
 	async onChooseItem(item: GoogleEvent, e: MouseEvent | KeyboardEvent): Promise<void> {
+		if (item.id === CREATE_TASK_ITEM_ID) {
+			this.open();
+			this.plugin.openCreateEventModal(
+				{
+					start: { date: this.currentDate.format("YYYY-MM-DD") },
+					end: { date: this.currentDate.clone().add(1, "day").format("YYYY-MM-DD") },
+				},
+				() => {
+					this.eventsChanged = true;
+					this.close();
+				}
+			);
+			return;
+		}
 		if (item.id == "xxx") {
 			let note = getSingleDailyNote(this.currentDate);
 			if (!note) {

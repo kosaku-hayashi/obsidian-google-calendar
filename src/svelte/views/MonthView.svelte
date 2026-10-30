@@ -119,7 +119,7 @@
         new EventListModal(getEventsOfDay(events, date),"details", date, false, () => {
             googleClearCachedEvents();
             displayedMonth = displayedMonth
-        }).open();
+        }, isObsidianView).open();
     }
     
     const onClickWeek = async (week: moment.Moment, isMenu:boolean) => {
@@ -351,4 +351,3 @@
 <style>
 
 </style>
-
